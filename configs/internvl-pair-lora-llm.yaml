@@ -1,0 +1,33 @@
+session: internvl_pair_lora_llm
+
+data:
+  ms1m_dir: data/MS1M-ArcFace
+  num_identities: 85742
+  val_fraction: 0.2
+
+backbone:
+  name: internvl_pair
+  embedding_dim: 0
+  dropout: 0.0
+  lora:
+    rank: 8
+    alpha: 8
+    component: llm
+    llm_targets: ["w1", "w2", "w3"]
+
+loss:
+  name: infonce
+  temperature: 0.07
+
+training:
+  epochs: 10
+  batch_size: 16
+  lr: 0.0002
+  optimizer: adamw
+  weight_decay: 0.01
+  warmup_epochs: 2
+  gradient_accumulation_steps: 16
+  pairs_per_epoch: 100000
+  num_workers: 4
+  mixed_precision: fp16
+  eval_every: 2
