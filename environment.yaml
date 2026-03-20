@@ -19,11 +19,9 @@ dependencies:
       - scikit-learn
       - accelerate
       - tqdm
-      - retina-face
       - scikit-image
       - opencv-python
-      - tf-keras
-      - open-clip-torch
       - transformers>=4.37.2,<5.0.0
       - sentencepiece
+      - timm
 

@@ -1,12 +1,17 @@
 #!/bin/bash
-#SBATCH --account=your-account
 #SBATCH --job-name=internvit-lora
 #SBATCH --time=04:00:00
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
-#SBATCH --mail-user=user@example.com
 #SBATCH --mail-type=ALL
+
+# --- Self-submit: run `bash hpc/internvit-lora.sh` from project root ---
+if [ -z "$SLURM_JOB_ID" ]; then
+    source .env 2>/dev/null || { echo "ERROR: .env not found. cp .env.example .env"; exit 1; }
+    sbatch --account="$SLURM_ACCOUNT" --mail-user="$SLURM_MAIL_USER" "$0"
+    exit $?
+fi
 
 CONFIG_NAME="internvit-lora"
 

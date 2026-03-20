@@ -1,11 +1,16 @@
 #!/bin/bash
-#SBATCH --account=your-account
 #SBATCH --job-name=fv_install
 #SBATCH --time=00:45:00
 #SBATCH --mem=15G
 #SBATCH --cpus-per-task=8
-#SBATCH --mail-user=user@example.com
 #SBATCH --mail-type=ALL
+
+# --- Self-submit: run `bash hpc/_requirements_installation.sh` from project root ---
+if [ -z "$SLURM_JOB_ID" ]; then
+    source .env 2>/dev/null || { echo "ERROR: .env not found. cp .env.example .env"; exit 1; }
+    sbatch --account="$SLURM_ACCOUNT" --mail-user="$SLURM_MAIL_USER" "$0"
+    exit $?
+fi
 
 echo "=== FACE-VERIFICATION ENVIRONMENT INSTALLATION ==="
 
@@ -160,7 +165,3 @@ echo "Installed packages:"
 pip list
 echo ""
 echo "=== INSTALLATION COMPLETED ==="
-echo ""
-echo "To use in training scripts:"
-echo "  module load StdEnv/2023 gcc cuda/12.2 cudnn python/3.11 opencv/4.8.1"
-echo "  source ../face-verification-env/bin/activate"
