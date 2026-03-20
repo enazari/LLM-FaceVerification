@@ -8,7 +8,9 @@
 
 # --- Self-submit: run `bash hpc/nce.sh` from project root ---
 if [ -z "$SLURM_JOB_ID" ]; then
-    source .env 2>/dev/null || { echo "ERROR: .env not found. cp .env.example .env"; exit 1; }
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    source "$PROJECT_ROOT/.env" 2>/dev/null || { echo "ERROR: .env not found. cp .env.example .env"; exit 1; }
     sbatch --account="$SLURM_ACCOUNT" --mail-user="$SLURM_MAIL_USER" "$0"
     exit $?
 fi
