@@ -26,6 +26,7 @@ echo "Project directory: $(pwd)"
 mkdir -p $SLURM_TMPDIR/data
 cp -r data/checkpoints $SLURM_TMPDIR/data/
 cp -r data/ms1m_1000_train.lmdb $SLURM_TMPDIR/data/
+cp -r data/ms1m_1000_val.lmdb $SLURM_TMPDIR/data/
 
 export DATA_DIR=$SLURM_TMPDIR/data
 source ../face-verification-env/bin/activate
