@@ -25,4 +25,5 @@ dependencies:
       - sentencepiece
       - timm
       - einops
+      - flash-attn  # optional, speeds up attention 2-3x
 

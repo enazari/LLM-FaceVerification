@@ -100,6 +100,13 @@ if [ $? -ne 0 ]; then
     echo "WARNING: timm/einops install failed."
 fi
 
+# Flash Attention 2 for faster transformer attention
+echo "Installing flash-attn..."
+pip install flash-attn --no-build-isolation
+if [ $? -ne 0 ]; then
+    echo "WARNING: flash-attn install failed. Training will use eager attention (slower)."
+fi
+
 # Step 7: Verify packages
 echo "Verifying package compatibility..."
 python -c "
