@@ -55,3 +55,31 @@ def inject_lora(model: nn.Module, target_names: list[str], r: int, alpha: float)
         setattr(parent, parts[-1], LoRALinear(module, r, alpha))
         replaced += 1
     return replaced
+
+
+def inject_mllm_lora(backbone, lora_cfg: dict) -> None:
+    """Inject LoRA into an InternVL2 model's ViT and/or LLM components.
+
+    Args:
+        backbone: Module with a `.model` attribute containing vision_model,
+                  language_model, and mlp1.
+        lora_cfg: Dict with keys: rank, alpha, component (vit|llm|both),
+                  vit_targets, llm_targets, train_projector.
+    """
+    component = lora_cfg.get("component", "both")
+
+    if component in ("vit", "both"):
+        vit_targets = lora_cfg.get("vit_targets", ["fc1", "fc2"])
+        n = inject_lora(backbone.model.vision_model, vit_targets,
+                        r=lora_cfg["rank"], alpha=lora_cfg["alpha"])
+        print(f"  LoRA (ViT): injected {n} adapters")
+
+    if component in ("llm", "both"):
+        llm_targets = lora_cfg.get("llm_targets", ["w1", "w2", "w3"])
+        n = inject_lora(backbone.model.language_model, llm_targets,
+                        r=lora_cfg["rank"], alpha=lora_cfg["alpha"])
+        print(f"  LoRA (LLM): injected {n} adapters")
+
+    if lora_cfg.get("train_projector", False):
+        backbone.model.mlp1.requires_grad_(True)
+        print("  MLP projector unfrozen")

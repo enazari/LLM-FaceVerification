@@ -15,13 +15,12 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
-from PIL import Image
 from torch.utils.data import DataLoader
-from torchvision import transforms
 from tqdm import tqdm
 
 from src.eval.cfp import _load_cfp
 from src.eval.lfw import _load_lfw
+from src.eval.common import embed_faces
 from src.backbones.factory import build_backbone
 from src.data.dataset import LMDBFaceDataset
 
@@ -33,26 +32,6 @@ MODELS = {
 
 BENCHMARKS = ["LFW", "CFP-FF", "CFP-FP"]
 DATA_DIR = "data"
-
-
-@torch.no_grad()
-def embed_faces(backbone, face_list, device):
-    """Embed a list of uint8 face arrays. Returns L2-normalized [N, 512] tensor."""
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-    ])
-    embs, batch = [], []
-    for face in tqdm(face_list, desc="  Embedding faces", leave=False):
-        batch.append(transform(Image.fromarray(face)))
-        if len(batch) == 64:
-            t = torch.stack(batch).to(device)
-            embs.append(F.normalize(backbone(t), dim=1).cpu())
-            batch = []
-    if batch:
-        t = torch.stack(batch).to(device)
-        embs.append(F.normalize(backbone(t), dim=1).cpu())
-    return torch.cat(embs)
 
 
 @torch.no_grad()

@@ -42,7 +42,7 @@ class MockLanguageModel(nn.Module):
     def get_input_embeddings(self):
         return self._embedding
 
-    def gradient_checkpointing_enable(self):
+    def gradient_checkpointing_enable(self, **kwargs):
         pass
 
     def forward(self, inputs_embeds=None, attention_mask=None,

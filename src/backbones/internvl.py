@@ -123,27 +123,8 @@ def build_internvl(cfg):
 
     lora_cfg = cfg["backbone"].get("lora")
     if lora_cfg:
-        from src.backbones.lora import inject_lora
-        component = lora_cfg.get("component", "both")
-        total_replaced = 0
-
-        if component in ("vit", "both"):
-            vit_targets = lora_cfg.get("vit_targets", ["fc1", "fc2"])
-            n = inject_lora(backbone.model.vision_model, vit_targets,
-                            r=lora_cfg["rank"], alpha=lora_cfg["alpha"])
-            total_replaced += n
-            print(f"  LoRA (ViT): injected {n} adapters")
-
-        if component in ("llm", "both"):
-            llm_targets = lora_cfg.get("llm_targets", ["w1", "w2", "w3"])
-            n = inject_lora(backbone.model.language_model, llm_targets,
-                            r=lora_cfg["rank"], alpha=lora_cfg["alpha"])
-            total_replaced += n
-            print(f"  LoRA (LLM): injected {n} adapters")
-
-        if lora_cfg.get("train_projector", False):
-            backbone.model.mlp1.requires_grad_(True)
-            print("  MLP projector unfrozen")
+        from src.backbones.lora import inject_mllm_lora
+        inject_mllm_lora(backbone, lora_cfg)
 
     total = sum(p.numel() for p in backbone.parameters())
     trainable = sum(p.numel() for p in backbone.parameters() if p.requires_grad)

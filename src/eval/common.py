@@ -1,9 +1,54 @@
-"""Shared 10-fold cross-validation logic for face verification benchmarks."""
+"""Shared evaluation utilities for face verification benchmarks."""
 
 import csv
 import os
 
 import numpy as np
+import torch
+import torch.nn.functional as F
+from PIL import Image
+from torchvision import transforms
+from tqdm import tqdm
+
+# Standard face transform: [0, 255] uint8 → [-1, 1] float tensor
+FACE_TRANSFORM = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+])
+
+
+@torch.no_grad()
+def embed_faces(backbone, face_list, device, batch_size=64):
+    """Extract L2-normalized embeddings from a list of face arrays."""
+    embs = []
+    buf = []
+    for face in face_list:
+        buf.append(FACE_TRANSFORM(Image.fromarray(face)))
+        if len(buf) == batch_size:
+            t = torch.stack(buf).to(device)
+            embs.append(F.normalize(backbone(t), dim=1).cpu())
+            buf = []
+    if buf:
+        t = torch.stack(buf).to(device)
+        embs.append(F.normalize(backbone(t), dim=1).cpu())
+    return torch.cat(embs)
+
+
+@torch.no_grad()
+def pairwise_scores(backbone, faces_a, faces_b, device, batch_size=8):
+    """Compute P("Yes") for all pairs using a pairwise MLLM backbone."""
+    n = len(faces_a)
+    scores = []
+    for i in tqdm(range(0, n, batch_size), desc="  pairwise scoring", leave=False):
+        end = min(i + batch_size, n)
+        batch_a = torch.stack([FACE_TRANSFORM(Image.fromarray(faces_a[j]))
+                               for j in range(i, end)]).to(device)
+        batch_b = torch.stack([FACE_TRANSFORM(Image.fromarray(faces_b[j]))
+                               for j in range(i, end)]).to(device)
+        logits = backbone(batch_a, batch_b)
+        p_yes = backbone.get_yes_no_scores(logits)
+        scores.append(p_yes.cpu())
+    return torch.cat(scores).numpy()
 
 
 def compute_10fold(sims, labels, fold_sizes):

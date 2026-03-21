@@ -16,7 +16,8 @@ from PIL import Image
 from tqdm import tqdm
 
 from .common import compute_10fold, write_results_csv
-from .lfw import _detect_align, _embed_faces, _pairwise_scores
+from .lfw import _detect_align
+from .common import embed_faces, pairwise_scores
 
 LMDB_NAME_FF = "cfp_ff_10fold_retinaface.lmdb"
 LMDB_NAME_FP = "cfp_fp_10fold_retinaface.lmdb"
@@ -173,8 +174,8 @@ def evaluate_cfp(backbone, data_dir, device, protocol, output_dir=None,
     print(f"{tag} eval: {len(labels)} pairs, folds={fold_sizes}")
 
     backbone.eval()
-    embs_a = _embed_faces(backbone, faces_a, device, batch_size)
-    embs_b = _embed_faces(backbone, faces_b, device, batch_size)
+    embs_a = embed_faces(backbone, faces_a, device, batch_size)
+    embs_b = embed_faces(backbone, faces_b, device, batch_size)
     sims = (embs_a * embs_b).sum(dim=1).numpy()
 
     results = compute_10fold(sims, labels, fold_sizes)
@@ -195,7 +196,7 @@ def evaluate_cfp_pairwise(backbone, data_dir, device, protocol,
     print(f"{tag} pairwise eval: {len(labels)} pairs, folds={fold_sizes}")
 
     backbone.eval()
-    sims = _pairwise_scores(backbone, faces_a, faces_b, device, batch_size)
+    sims = pairwise_scores(backbone, faces_a, faces_b, device, batch_size)
 
     results = compute_10fold(sims, labels, fold_sizes)
     if output_dir:

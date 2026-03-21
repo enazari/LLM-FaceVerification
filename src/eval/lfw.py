@@ -13,11 +13,11 @@ import cv2
 import lmdb
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 from skimage.transform import SimilarityTransform
-from torchvision import transforms
 from tqdm import tqdm
+
+from src.eval.common import embed_faces, pairwise_scores
 
 from .common import compute_10fold, write_results_csv
 
@@ -212,48 +212,7 @@ def _load_lfw(data_dir="data"):
     return faces_a, faces_b, np.array(labels), fold_sizes
 
 
-# ---------------------------------------------------------------------------
-# Embedding helpers
-# ---------------------------------------------------------------------------
-
-def _embed_faces(backbone, face_list, device, batch_size=64):
-    """Extract L2-normalized embeddings from a list of face arrays."""
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-    ])
-    embs = []
-    buf = []
-    for face in face_list:
-        buf.append(transform(Image.fromarray(face)))
-        if len(buf) == batch_size:
-            t = torch.stack(buf).to(device)
-            e = F.normalize(backbone(t), dim=1)
-            embs.append(e.cpu())
-            buf = []
-    if buf:
-        t = torch.stack(buf).to(device)
-        e = F.normalize(backbone(t), dim=1)
-        embs.append(e.cpu())
-    return torch.cat(embs)
-
-
-def _pairwise_scores(backbone, faces_a, faces_b, device, batch_size=8):
-    """Compute P("Yes") for all pairs using a pairwise MLLM backbone."""
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-    ])
-    n = len(faces_a)
-    scores = []
-    for i in tqdm(range(0, n, batch_size), desc="  pairwise scoring", leave=False):
-        end = min(i + batch_size, n)
-        batch_a = torch.stack([transform(Image.fromarray(faces_a[j])) for j in range(i, end)]).to(device)
-        batch_b = torch.stack([transform(Image.fromarray(faces_b[j])) for j in range(i, end)]).to(device)
-        logits = backbone(batch_a, batch_b)
-        p_yes = backbone.get_yes_no_scores(logits)
-        scores.append(p_yes.cpu())
-    return torch.cat(scores).numpy()
+# embed_faces and pairwise_scores are in src/eval/common.py
 
 
 # ---------------------------------------------------------------------------
@@ -266,8 +225,8 @@ def evaluate_lfw(backbone, data_dir, device, output_dir=None, batch_size=64):
     print(f"LFW eval: {len(labels)} pairs, folds={fold_sizes}")
 
     backbone.eval()
-    embs_a = _embed_faces(backbone, faces_a, device, batch_size)
-    embs_b = _embed_faces(backbone, faces_b, device, batch_size)
+    embs_a = embed_faces(backbone, faces_a, device, batch_size)
+    embs_b = embed_faces(backbone, faces_b, device, batch_size)
     sims = (embs_a * embs_b).sum(dim=1).numpy()
 
     results = compute_10fold(sims, labels, fold_sizes)
@@ -287,7 +246,7 @@ def evaluate_lfw_pairwise(backbone, data_dir, device, output_dir=None,
     print(f"LFW pairwise eval: {len(labels)} pairs, folds={fold_sizes}")
 
     backbone.eval()
-    sims = _pairwise_scores(backbone, faces_a, faces_b, device, batch_size)
+    sims = pairwise_scores(backbone, faces_a, faces_b, device, batch_size)
 
     results = compute_10fold(sims, labels, fold_sizes)
     if output_dir:
