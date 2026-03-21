@@ -24,4 +24,5 @@ dependencies:
       - transformers>=4.37.2,<5.0.0
       - sentencepiece
       - timm
+      - einops
 

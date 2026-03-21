@@ -93,11 +93,11 @@ if [ $? -ne 0 ]; then
     echo "WARNING: transformers/sentencepiece install failed. Try with internet."
 fi
 
-# timm needed by InternVL2-2B custom code
-echo "Installing timm..."
-pip install timm
+# timm + einops needed by InternVL2-2B custom code
+echo "Installing timm and einops..."
+pip install timm einops
 if [ $? -ne 0 ]; then
-    echo "WARNING: timm install failed."
+    echo "WARNING: timm/einops install failed."
 fi
 
 # Step 7: Verify packages

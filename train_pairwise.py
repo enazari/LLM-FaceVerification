@@ -49,7 +49,7 @@ def train_epoch(backbone, loader, optimizer, accelerator, yes_id, no_id):
 
             loss = F.cross_entropy(logits, target_ids)
             accelerator.backward(loss)
-            accelerator.clip_grad_norm_(backbone.parameters(), max_norm=5.0)
+            torch.nn.utils.clip_grad_norm_(backbone.parameters(), max_norm=5.0)
             optimizer.step()
 
         with torch.no_grad():

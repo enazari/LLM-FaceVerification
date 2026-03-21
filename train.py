@@ -43,7 +43,7 @@ def train_epoch(backbone, loss_fn, loader, optimizer, accelerator):
 
             loss = loss_fn(emb_norm, labels)
             accelerator.backward(loss)
-            accelerator.clip_grad_norm_(params, max_norm=5.0)
+            torch.nn.utils.clip_grad_norm_(params, max_norm=5.0)
             optimizer.step()
 
             # Pair accuracy: is the positive partner the top-1 nearest?
