@@ -27,5 +27,5 @@ training:
   weight_decay: 0.0005
   warmup_epochs: 5
   num_workers: 6
-  mixed_precision: fp16
+  mixed_precision: bf16
   eval_every: 5

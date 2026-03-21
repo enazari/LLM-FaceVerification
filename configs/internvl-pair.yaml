@@ -15,5 +15,5 @@ training:
   lr: 0.0
   warmup_epochs: 0
   num_workers: 4
-  mixed_precision: fp16
+  mixed_precision: bf16
   eval_every: 1
