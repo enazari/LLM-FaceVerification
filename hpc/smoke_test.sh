@@ -18,8 +18,8 @@ fi
 module purge
 module load StdEnv/2023 gcc cuda/12.2 cudnn python/3.11 opencv/4.8.1
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR/.."
+# SLURM preserves submit dir as CWD; we submit from hpc/
+cd ..
 echo "Project directory: $(pwd)"
 
 # Copy minimal data to fast local storage
