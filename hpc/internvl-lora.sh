@@ -2,8 +2,8 @@
 #SBATCH --job-name=internvl-lora
 #SBATCH --time=24:00:00
 #SBATCH --nodes=2
-#SBATCH --gpus-per-node=4
 #SBATCH --ntasks-per-node=4
+#SBATCH --gres=gpu:h100:4
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=0
 #SBATCH --mail-type=ALL
@@ -27,7 +27,7 @@ echo "Project directory: $(pwd)"
 
 N=$(grep "num_identities" configs/$CONFIG_NAME.yaml | awk '{print $2}')
 echo "Config: $CONFIG_NAME, num_identities: $N"
-echo "Nodes: $SLURM_NNODES, GPUs/node: 4, Total GPUs: $((SLURM_NNODES * 4))"
+echo "Nodes: $SLURM_NNODES, GPUs: $SLURM_NTASKS"
 
 # Copy data to fast local storage
 mkdir -p $SLURM_TMPDIR/data
@@ -45,7 +45,7 @@ export DATA_DIR=$SLURM_TMPDIR/data
 source ../face-verification-env/bin/activate
 export HF_HUB_OFFLINE=1
 
-# Multi-node setup
+# Multi-node rendezvous
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 export MASTER_PORT=29500
 
