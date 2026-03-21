@@ -29,17 +29,18 @@ N=$(grep "num_identities" configs/$CONFIG_NAME.yaml | awk '{print $2}')
 echo "Config: $CONFIG_NAME, num_identities: $N"
 echo "Nodes: $SLURM_NNODES, GPUs: $SLURM_NTASKS"
 
-# Copy data to fast local storage
-mkdir -p $SLURM_TMPDIR/data
-cp -r data/checkpoints $SLURM_TMPDIR/data/
-cp -r data/ms1m_${N}_train.lmdb $SLURM_TMPDIR/data/
-cp -r data/ms1m_${N}_val.lmdb $SLURM_TMPDIR/data/
-cp -r data/lfw_10fold_original_retinaface.lmdb $SLURM_TMPDIR/data/ 2>/dev/null
-cp -r data/cfp_ff_10fold_retinaface.lmdb $SLURM_TMPDIR/data/ 2>/dev/null
-cp -r data/cfp_fp_10fold_retinaface.lmdb $SLURM_TMPDIR/data/ 2>/dev/null
-
-echo "Local data:"
-du -sh $SLURM_TMPDIR/data/*
+# Copy data to fast local storage on EVERY node
+srun --ntasks-per-node=1 bash -c "
+    mkdir -p \$SLURM_TMPDIR/data
+    cp -r data/checkpoints \$SLURM_TMPDIR/data/
+    cp -r data/ms1m_${N}_train.lmdb \$SLURM_TMPDIR/data/
+    cp -r data/ms1m_${N}_val.lmdb \$SLURM_TMPDIR/data/
+    cp -r data/lfw_10fold_original_retinaface.lmdb \$SLURM_TMPDIR/data/ 2>/dev/null
+    cp -r data/cfp_ff_10fold_retinaface.lmdb \$SLURM_TMPDIR/data/ 2>/dev/null
+    cp -r data/cfp_fp_10fold_retinaface.lmdb \$SLURM_TMPDIR/data/ 2>/dev/null
+    echo \"Node \$(hostname): data copied to \$SLURM_TMPDIR/data\"
+    du -sh \$SLURM_TMPDIR/data/*
+"
 
 export DATA_DIR=$SLURM_TMPDIR/data
 source ../face-verification-env/bin/activate

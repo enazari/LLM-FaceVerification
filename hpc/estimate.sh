@@ -29,11 +29,14 @@ NUM_GPUS=$SLURM_NTASKS
 echo "Nodes: $SLURM_NNODES, Tasks/node: $((NUM_GPUS / SLURM_NNODES)), Total GPUs: $NUM_GPUS"
 echo "Nodelist: $SLURM_JOB_NODELIST"
 
-# Copy data to fast local storage
-mkdir -p $SLURM_TMPDIR/data
-cp -r data/checkpoints $SLURM_TMPDIR/data/
-cp -r data/ms1m_1000_train.lmdb $SLURM_TMPDIR/data/
-cp -r data/ms1m_1000_val.lmdb $SLURM_TMPDIR/data/
+# Copy data to fast local storage on EVERY node
+srun --ntasks-per-node=1 bash -c '
+    mkdir -p $SLURM_TMPDIR/data
+    cp -r data/checkpoints $SLURM_TMPDIR/data/
+    cp -r data/ms1m_1000_train.lmdb $SLURM_TMPDIR/data/
+    cp -r data/ms1m_1000_val.lmdb $SLURM_TMPDIR/data/
+    echo "Node $(hostname): data copied to $SLURM_TMPDIR/data"
+'
 
 export DATA_DIR=$SLURM_TMPDIR/data
 source ../face-verification-env/bin/activate
