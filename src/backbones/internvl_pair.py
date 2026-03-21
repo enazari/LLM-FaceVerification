@@ -67,8 +67,10 @@ class InternVLPairBackbone(nn.Module):
         self.yes_token_id = tokenizer.encode("Yes", add_special_tokens=False)[0]
         self.no_token_id = tokenizer.encode("No", add_special_tokens=False)[0]
 
-        # Memory optimization
-        self.model.language_model.gradient_checkpointing_enable()
+        # Memory optimization — use_reentrant=False required for LoRA
+        self.model.language_model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
 
     def forward(self, img_a, img_b):
         """
@@ -89,15 +91,17 @@ class InternVLPairBackbone(nn.Module):
         vit_a = vit_embeds[:B]   # [B, 256, 2048]
         vit_b = vit_embeds[B:]   # [B, 256, 2048]
 
-        # Build input embeddings
+        # Build input embeddings: [BOS] + img_a + img_b + text
         input_ids = self.input_ids_template.expand(B, -1)
-        input_embeds = self.model.language_model.get_input_embeddings()(input_ids)
-        input_embeds = input_embeds.clone()
-
-        # Replace image placeholder positions
+        text_embeds = self.model.language_model.get_input_embeddings()(input_ids)
         n = self.num_image_tokens
-        input_embeds[:, 1:1 + n, :] = vit_a          # positions 1..256: image 1
-        input_embeds[:, 1 + n:1 + 2 * n, :] = vit_b  # positions 257..512: image 2
+        # Use cat instead of in-place assignment to preserve gradient flow
+        input_embeds = torch.cat([
+            text_embeds[:, :1, :],           # BOS
+            vit_a,                            # image 1 (has grad from LoRA)
+            vit_b,                            # image 2 (has grad from LoRA)
+            text_embeds[:, 1 + 2 * n:, :],   # text tokens
+        ], dim=1)
 
         # Forward through LLM
         attention_mask = torch.ones(B, input_ids.size(1), device=img_a.device, dtype=torch.long)

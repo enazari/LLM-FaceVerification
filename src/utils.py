@@ -36,3 +36,26 @@ def save_checkpoint(accelerator, backbone, optimizer, epoch, output_dir, name,
         state["head"] = accelerator.unwrap_model(head).state_dict()
     torch.save(state, path)
     print(f"  saved → {path}")
+
+
+def apply_overrides(cfg: dict, overrides: list[str]) -> None:
+    """Apply dotted-path overrides to a config dict in-place.
+
+    Example: apply_overrides(cfg, ["data.num_identities=1000", "training.lr=0.001"])
+    """
+    for item in overrides:
+        key, val = item.split("=", 1)
+        parts = key.split(".")
+        d = cfg
+        for p in parts[:-1]:
+            d = d[p]
+        # Auto-cast
+        try:
+            val = int(val)
+        except ValueError:
+            try:
+                val = float(val)
+            except ValueError:
+                if val.lower() in ("true", "false"):
+                    val = val.lower() == "true"
+        d[parts[-1]] = val

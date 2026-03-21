@@ -13,7 +13,15 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import torch.utils.checkpoint as _ckpt_mod
 from accelerate import Accelerator
+
+# Force use_reentrant=False for gradient checkpointing (LoRA compatibility)
+_orig_ckpt = _ckpt_mod.checkpoint
+def _patched_ckpt(*args, **kwargs):
+    kwargs.setdefault("use_reentrant", False)
+    return _orig_ckpt(*args, **kwargs)
+_ckpt_mod.checkpoint = _patched_ckpt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import yaml
@@ -21,18 +29,20 @@ import yaml
 from src.data.prepare import prepare, lmdb_paths
 from src.backbones.factory import build_backbone
 from src.data.pair_dataset import PairDataset
-from src.utils import cosine_lr, save_checkpoint
+from src.utils import cosine_lr, save_checkpoint, apply_overrides
 
 
 # ---------------------------------------------------------------------------
 # One training epoch
 # ---------------------------------------------------------------------------
 
-def train_epoch(backbone, loader, optimizer, accelerator, yes_id, no_id):
+def train_epoch(backbone, loader, optimizer, accelerator, yes_id, no_id,
+                max_steps=0):
     backbone.train()
     total_loss = 0.0
     correct = 0
     total = 0
+    steps_done = 0
 
     for img_a, img_b, labels in tqdm(loader, desc="  train", leave=False,
                                       disable=not accelerator.is_main_process):
@@ -60,8 +70,12 @@ def train_epoch(backbone, loader, optimizer, accelerator, yes_id, no_id):
 
         total_loss += loss.item()
         total += labels.size(0)
+        steps_done += 1
 
-    return total_loss / len(loader), correct / total
+        if max_steps > 0 and steps_done >= max_steps:
+            break
+
+    return total_loss / max(steps_done, 1), correct / max(total, 1)
 
 
 # ---------------------------------------------------------------------------
@@ -71,10 +85,18 @@ def train_epoch(backbone, loader, optimizer, accelerator, yes_id, no_id):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="internvl-pair-lora")
+    parser.add_argument("--max-steps", type=int, default=0,
+                        help="Stop after N gradient steps (0=full epoch)")
+    parser.add_argument("--skip-eval", action="store_true",
+                        help="Skip LFW/CFP evaluation after training")
+    parser.add_argument("--override", nargs="*", default=[],
+                        help="Config overrides: key.path=value")
     args = parser.parse_args()
 
     with open(f"configs/{args.config}.yaml") as f:
         cfg = yaml.safe_load(f)
+    if args.override:
+        apply_overrides(cfg, args.override)
 
     grad_accum = cfg["training"].get("gradient_accumulation_steps", 1)
     accelerator = Accelerator(
@@ -175,7 +197,8 @@ def main():
             train_loader.dataset.resample()
 
         train_loss, train_acc = train_epoch(
-            backbone, train_loader, optimizer, accelerator, yes_id, no_id
+            backbone, train_loader, optimizer, accelerator, yes_id, no_id,
+            max_steps=args.max_steps,
         )
         if accelerator.is_main_process:
             print(f"  train_loss={train_loss:.4f}  train_acc={train_acc:.4f}")
@@ -191,7 +214,7 @@ def main():
         save_checkpoint(accelerator, backbone, optimizer, epoch, output_dir, "last")
 
     # Pairwise evaluation
-    if accelerator.is_main_process:
+    if accelerator.is_main_process and not args.skip_eval:
         from src.eval.lfw import prepare_lfw, evaluate_lfw_pairwise
         from src.eval.cfp import prepare_cfp, evaluate_cfp_pairwise
 

@@ -61,8 +61,10 @@ class InternVLBackbone(nn.Module):
         self.register_buffer("img_std", _IN_STD)
         self.num_visual_tokens = num_image_tokens
 
-        # Memory optimization
-        self.model.language_model.gradient_checkpointing_enable()
+        # Memory optimization — use_reentrant=False required for LoRA
+        self.model.language_model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
 
     def forward(self, x):
         """x: [B, 3, 112, 112] in [-1, 1]. Returns [B, 2048]."""
@@ -77,14 +79,16 @@ class InternVLBackbone(nn.Module):
         # Visual features through ViT + pixel shuffle + MLP
         vit_embeds = self.model.extract_feature(x)  # [B, 256, 2048]
 
-        # Build input embeddings from template
+        # Build input embeddings: [BOS] + visual tokens + text tokens
         input_ids = self.input_ids_template.expand(B, -1)
-        input_embeds = self.model.language_model.get_input_embeddings()(input_ids)
-        input_embeds = input_embeds.clone()
-
-        # Replace image placeholders with visual embeddings
+        text_embeds = self.model.language_model.get_input_embeddings()(input_ids)
         n = self.num_visual_tokens
-        input_embeds[:, 1:1 + n, :] = vit_embeds
+        # Use cat instead of in-place assignment to preserve gradient flow
+        input_embeds = torch.cat([
+            text_embeds[:, :1, :],        # BOS
+            vit_embeds,                     # visual tokens (has grad from LoRA)
+            text_embeds[:, 1 + n:, :],     # text tokens
+        ], dim=1)
 
         # Forward through LLM
         attention_mask = torch.ones(B, input_ids.size(1), device=x.device, dtype=torch.long)

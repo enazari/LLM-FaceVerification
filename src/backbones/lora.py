@@ -15,15 +15,17 @@ class LoRALinear(nn.Module):
         super().__init__()
         self.original = original
         self.original.requires_grad_(False)
-        dtype = original.weight.dtype
-        self.A = nn.Linear(original.in_features, r, bias=False, dtype=dtype)
-        self.B = nn.Linear(r, original.out_features, bias=False, dtype=dtype)
+        # LoRA adapters in float32 for stable optimizer updates (base stays fp16)
+        self.A = nn.Linear(original.in_features, r, bias=False, dtype=torch.float32)
+        self.B = nn.Linear(r, original.out_features, bias=False, dtype=torch.float32)
         nn.init.kaiming_uniform_(self.A.weight)
         nn.init.zeros_(self.B.weight)
         self.scale = alpha / r
 
     def forward(self, x):
-        return self.original(x) + self.B(self.A(x)) * self.scale
+        base = self.original(x)
+        lora = self.B(self.A(x.float())) * self.scale
+        return base + lora.to(base.dtype)
 
 
 def inject_lora(model: nn.Module, target_names: list[str], r: int, alpha: float):
