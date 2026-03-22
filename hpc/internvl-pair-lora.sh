@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=internvl-pair-lora
-#SBATCH --time=08:00:00
+#SBATCH --time=06:00:00
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:h100:4
