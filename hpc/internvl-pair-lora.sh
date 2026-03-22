@@ -51,6 +51,6 @@ export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 export MASTER_PORT=29500
 
 echo "Starting training: $CONFIG_NAME"
-srun accelerate launch --multi_gpu --num_processes=$((SLURM_NNODES * 4)) --num_machines=$SLURM_NNODES --main_process_ip=$MASTER_ADDR --main_process_port=$MASTER_PORT --mixed_precision=bf16 train_pairwise.py --config $CONFIG_NAME
+srun bash -c "accelerate launch --multi_gpu --num_processes=$((SLURM_NNODES * 4)) --num_machines=\$SLURM_NNODES --machine_rank=\$SLURM_PROCID --main_process_ip=\$MASTER_ADDR --main_process_port=\$MASTER_PORT --mixed_precision=bf16 train_pairwise.py --config \$CONFIG_NAME"
 
 echo "Done."

@@ -69,20 +69,21 @@ run_estimate() {
     echo "=== $name ==="
 
     START=$(date +%s)
-    if srun accelerate launch \
+    if srun bash -c "accelerate launch \
         --multi_gpu \
         --num_processes=$NUM_GPUS \
         --num_machines=$SLURM_NNODES \
+        --machine_rank=\$SLURM_PROCID \
         --main_process_ip=$MASTER_ADDR \
         --main_process_port=$MASTER_PORT \
         --mixed_precision=bf16 \
-        "$script" --config "$config" --max-steps "$STEPS" --skip-eval \
+        $script --config $config --max-steps $STEPS --skip-eval \
         --override data.num_identities=1000 \
                    training.epochs=1 \
                    training.warmup_epochs=0 \
                    training.num_workers=4 \
-                   "session=_estimate/$config" \
-                   "$@" 2>&1; then
+                   session=_estimate/$config \
+                   $@" 2>&1; then
         END=$(date +%s)
         ELAPSED=$((END - START))
         PASS=$((PASS + 1))
