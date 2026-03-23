@@ -32,7 +32,7 @@ echo "Nodes: $SLURM_NNODES, GPUs/node: $GPUS_PER_NODE, Total GPUs: $NUM_GPUS"
 echo "Nodelist: $SLURM_JOB_NODELIST"
 
 # Copy data to fast local storage on EVERY node
-srun --ntasks-per-node=1 bash -c '
+srun --ntasks-per-node=1 --ntasks=$SLURM_NNODES bash -c '
     mkdir -p $SLURM_TMPDIR/data
     cp -r data/checkpoints $SLURM_TMPDIR/data/
     cp -r data/ms1m_1000_train.lmdb $SLURM_TMPDIR/data/

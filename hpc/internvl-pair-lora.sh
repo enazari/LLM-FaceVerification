@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=internvl-pair-lora
-#SBATCH --time=00:30:00
+#SBATCH --time=06:00:00
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:h100:4
@@ -30,7 +30,7 @@ echo "Config: $CONFIG_NAME, num_identities: $N"
 echo "Nodes: $SLURM_NNODES, GPUs: $SLURM_NTASKS"
 
 # Copy data to fast local storage on EVERY node
-srun --ntasks-per-node=1 bash -c "
+srun --ntasks-per-node=1 --ntasks=$SLURM_NNODES bash -c "
     mkdir -p \$SLURM_TMPDIR/data
     cp -r data/checkpoints \$SLURM_TMPDIR/data/
     cp -r data/ms1m_${N}_train.lmdb \$SLURM_TMPDIR/data/
