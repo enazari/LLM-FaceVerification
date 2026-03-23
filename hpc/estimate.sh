@@ -2,14 +2,14 @@
 #SBATCH --job-name=estimate
 #SBATCH --time=00:45:00
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:h100:4
-#SBATCH --cpus-per-task=24
+#SBATCH --cpus-per-task=6
 #SBATCH --mem=0
 #SBATCH --mail-type=ALL
 
 # Validates all 3 tracks on 2 nodes × 4 GPUs and estimates full training time.
-# ntasks-per-node=1: srun launches 1 process per node, accelerate spawns 4 per node.
+# ntasks-per-node=4: SLURM launches 1 process per GPU, Accelerator() initializes from env.
 
 # --- Self-submit: run `bash hpc/estimate.sh` from hpc/ ---
 if [ -z "$SLURM_JOB_ID" ]; then
@@ -69,21 +69,14 @@ run_estimate() {
     echo "=== $name ==="
 
     START=$(date +%s)
-    if srun bash -c "accelerate launch \
-        --multi_gpu \
-        --num_processes=$NUM_GPUS \
-        --num_machines=$SLURM_NNODES \
-        --machine_rank=\$SLURM_PROCID \
-        --main_process_ip=$MASTER_ADDR \
-        --main_process_port=$MASTER_PORT \
-        --mixed_precision=bf16 \
+    if srun python \
         $script --config $config --max-steps $STEPS --skip-eval \
         --override data.num_identities=1000 \
                    training.epochs=1 \
                    training.warmup_epochs=0 \
                    training.num_workers=4 \
                    session=_estimate/$config \
-                   $@" 2>&1; then
+                   $@ 2>&1; then
         END=$(date +%s)
         ELAPSED=$((END - START))
         PASS=$((PASS + 1))

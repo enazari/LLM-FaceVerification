@@ -2,9 +2,9 @@
 #SBATCH --job-name=internvl-lora
 #SBATCH --time=92:00:00
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:h100:4
-#SBATCH --cpus-per-task=24
+#SBATCH --cpus-per-task=6
 #SBATCH --mem=0
 #SBATCH --mail-type=ALL
 
@@ -51,6 +51,6 @@ export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 export MASTER_PORT=29500
 
 echo "Starting training: $CONFIG_NAME"
-srun bash -c "accelerate launch --multi_gpu --num_processes=$((SLURM_NNODES * 4)) --num_machines=\$SLURM_NNODES --machine_rank=\$SLURM_PROCID --main_process_ip=\$MASTER_ADDR --main_process_port=\$MASTER_PORT --mixed_precision=bf16 train.py --config $CONFIG_NAME"
+srun python train.py --config "$CONFIG_NAME"
 
 echo "Done."

@@ -43,7 +43,16 @@ def parse_training_args(default_config: str):
 
 
 def setup_accelerator(cfg: dict) -> Accelerator:
-    """Create Accelerator from config."""
+    """Create Accelerator from config.
+
+    When launched via srun (SLURM-native), maps SLURM env vars to the
+    PyTorch distributed env vars that Accelerate expects.
+    """
+    if "SLURM_PROCID" in os.environ and "RANK" not in os.environ:
+        os.environ["RANK"] = os.environ["SLURM_PROCID"]
+        os.environ["LOCAL_RANK"] = os.environ["SLURM_LOCALID"]
+        os.environ["WORLD_SIZE"] = os.environ["SLURM_NTASKS"]
+
     grad_accum = cfg["training"].get("gradient_accumulation_steps", 1)
     return Accelerator(
         mixed_precision=cfg["training"].get("mixed_precision", "no"),
