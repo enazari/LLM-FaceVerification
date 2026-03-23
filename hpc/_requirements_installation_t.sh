@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --mail-type=ALL
 
-# --- Self-submit: run `bash hpc/_requirements_installation_trillium.sh` from project root ---
+# --- Self-submit: run `bash hpc/_requirements_installation_t.sh` from project root ---
 if [ -z "$SLURM_JOB_ID" ]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -16,7 +16,7 @@ if [ -z "$SLURM_JOB_ID" ]; then
     exit $?
 fi
 
-echo "=== FACE-VERIFICATION ENVIRONMENT INSTALLATION (Trillium) ==="
+echo "=== FACE-VERIFICATION ENVIRONMENT INSTALLATION  ==="
 
 # Step 1: Load required modules
 echo "Loading required modules..."
