@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=24
 #SBATCH --partition=compute_full_node
-#SBATCH --gpu-per-nodes=4
+#SBATCH --gpus-per-node=4
 #SBATCH --output=/scratch/enazari/slurm-logs/%j-%x.out
 #SBATCH --mail-type=ALL
 

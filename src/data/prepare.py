@@ -124,13 +124,23 @@ def write_lmdb(
 
 
 def lmdb_paths(cfg: dict) -> tuple[str, str]:
-    """Derive train/val LMDB paths from num_identities."""
+    """Derive train/val LMDB paths from num_identities.
+
+    When FIR_LMDB is set, both paths point to the single existing LMDB;
+    the train/val split is handled by FirLMDBFaceDataset at runtime.
+    """
+    fir_lmdb = os.environ.get("FIR_LMDB")
+    if fir_lmdb:
+        return fir_lmdb, fir_lmdb
     data_dir = os.environ.get("DATA_DIR", "data")
     n = cfg["data"]["num_identities"]
     return f"{data_dir}/ms1m_{n}_train.lmdb", f"{data_dir}/ms1m_{n}_val.lmdb"
 
 
 def prepare(cfg: dict) -> None:
+    if os.environ.get("FIR_LMDB"):
+        return  # existing LMDB used directly; no preparation needed
+
     train_path, val_path = lmdb_paths(cfg)
     ms1m_dir   = os.environ.get("MS1M_DIR", cfg["data"]["ms1m_dir"])
     num_identities = cfg["data"]["num_identities"]

@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from src.backbones.factory import build_backbone
 from src.data.prepare import prepare, lmdb_paths
-from src.data.dataset import LMDBFaceDataset
+from src.data.dataset import LMDBFaceDataset, FirLMDBFaceDataset
 from src.data.sampler import PairSampler
 from src.losses.factory import build_loss
 from src.utils import save_checkpoint
@@ -81,7 +81,14 @@ def main():
     train_path, _ = lmdb_paths(cfg)
     batch_size = cfg["training"]["batch_size"]
     num_workers = cfg["training"].get("num_workers", 4)
-    train_dataset = LMDBFaceDataset(train_path)
+    if os.environ.get("FIR_LMDB"):
+        train_dataset = FirLMDBFaceDataset(
+            train_path, split="train",
+            num_identities=cfg["data"]["num_identities"],
+            val_fraction=cfg["data"].get("val_fraction", 0.2),
+        )
+    else:
+        train_dataset = LMDBFaceDataset(train_path)
     if accelerator.is_main_process:
         print(f"Train: {len(train_dataset)} images, {train_dataset.num_classes} classes")
 
