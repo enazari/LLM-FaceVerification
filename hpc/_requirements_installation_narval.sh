@@ -14,8 +14,10 @@ if [ -z "$SLURM_JOB_ID" ]; then
     source "$PROJECT_ROOT/.env" 2>/dev/null || { echo "ERROR: .env not found. cp .env.example .env"; exit 1; }
     LOG_DIR="$SCRATCH/slurm-logs"
     mkdir -p "$LOG_DIR"
+    PROJECT_PARENT="$(cd "$PROJECT_ROOT/.." && pwd)"
     sbatch --account="$SLURM_ACCOUNT" --mail-user="$SLURM_MAIL_USER" \
-           --output="$LOG_DIR/%x-%j.out" "$0"
+           --output="$LOG_DIR/%x-%j.out" \
+           --export=ALL,PROJECT_PARENT="$PROJECT_PARENT" "$0"
     exit $?
 fi
 
@@ -26,8 +28,6 @@ module load StdEnv/2023 gcc cuda/12.2 cudnn python/3.11 opencv/4.8.1
 echo "Loaded modules:"; module list
 
 # Place venv as sibling to the project repo (e.g. mllm-fv/face-verification-env)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_PARENT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PERSISTENT_DIR=$PROJECT_PARENT/face-verification-env
 echo "Persistent venv: $PERSISTENT_DIR"
 
