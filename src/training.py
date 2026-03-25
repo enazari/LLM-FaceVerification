@@ -2,7 +2,6 @@
 
 import argparse
 import csv
-from datetime import datetime
 import os
 import shutil
 from pathlib import Path
@@ -64,12 +63,10 @@ def setup_accelerator(cfg: dict) -> Accelerator:
 def setup_output_dir(cfg: dict, config_name: str, accelerator: Accelerator) -> str:
     """Create output directory and copy config.
 
-    If SESSION_DIR env var is set, uses it directly (enables resume across
-    job submissions). Otherwise appends a HHMM timestamp to the session name.
+    Uses SESSION_DIR env var if set, otherwise sessions/{session_name}.
+    Resubmitting the same config resumes from last.pth automatically.
     """
-    output_dir = os.environ.get("SESSION_DIR") or (
-        f"sessions/{cfg['session']}_{datetime.now().strftime('%H%M')}"
-    )
+    output_dir = os.environ.get("SESSION_DIR") or f"sessions/{cfg['session']}"
     if accelerator.is_main_process:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         shutil.copy(f"configs/{config_name}.yaml", output_dir)
