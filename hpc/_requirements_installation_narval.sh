@@ -25,7 +25,10 @@ module purge
 module load StdEnv/2023 gcc cuda/12.2 cudnn python/3.11 opencv/4.8.1
 echo "Loaded modules:"; module list
 
-PERSISTENT_DIR=$SCRATCH/narval-face-verification-env
+# Place venv as sibling to the project repo (e.g. mllm-fv/face-verification-env)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_PARENT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PERSISTENT_DIR=$PROJECT_PARENT/face-verification-env
 echo "Persistent venv: $PERSISTENT_DIR"
 
 if [ -d "$PERSISTENT_DIR" ]; then
@@ -36,7 +39,7 @@ fi
 unset PYTHONPATH; export PYTHONPATH=""
 
 # Build on fast local NVMe, copy to scratch when done
-BUILD_ENV=$SLURM_TMPDIR/narval-face-verification-env
+BUILD_ENV=$SLURM_TMPDIR/face-verification-env
 python -m venv --system-site-packages $BUILD_ENV
 source $BUILD_ENV/bin/activate
 echo "Build venv: $VIRTUAL_ENV"
