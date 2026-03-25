@@ -21,9 +21,10 @@ dependencies:
       - tqdm
       - scikit-image
       - opencv-python
-      - transformers>=4.37.2,<5.0.0
+      - transformers>=4.37.2,<4.50.0
       - sentencepiece
       - timm
       - einops
-      - flash-attn  # optional, speeds up attention 2-3x
+      # flash-attn: install separately after env creation (needs torch at build time)
+      #   pip install flash-attn
 

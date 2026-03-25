@@ -14,16 +14,17 @@ from src.eval.cfp import prepare_cfp, evaluate_cfp
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Config name (without .yaml)")
+    parser.add_argument("--session", default=None, help="Session dir override (default: sessions/{config.session})")
     parser.add_argument("--checkpoint", default="best", help="Checkpoint name (best or last)")
     parser.add_argument("--data-dir", default="data")
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=16)
     args = parser.parse_args()
 
     with open(f"configs/{args.config}.yaml") as f:
         cfg = yaml.safe_load(f)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    output_dir = f"sessions/{cfg['session']}"
+    output_dir = args.session or f"sessions/{cfg['session']}"
 
     # Load model
     backbone = build_backbone(cfg)

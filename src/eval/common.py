@@ -22,15 +22,20 @@ def embed_faces(backbone, face_list, device, batch_size=64):
     """Extract L2-normalized embeddings from a list of face arrays."""
     embs = []
     buf = []
+    n_batches = (len(face_list) + batch_size - 1) // batch_size
+    pbar = tqdm(total=n_batches, desc="  embedding", leave=False)
     for face in face_list:
         buf.append(FACE_TRANSFORM(Image.fromarray(face)))
         if len(buf) == batch_size:
             t = torch.stack(buf).to(device)
             embs.append(F.normalize(backbone(t), dim=1).cpu())
             buf = []
+            pbar.update(1)
     if buf:
         t = torch.stack(buf).to(device)
         embs.append(F.normalize(backbone(t), dim=1).cpu())
+        pbar.update(1)
+    pbar.close()
     return torch.cat(embs)
 
 
