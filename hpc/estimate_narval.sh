@@ -48,7 +48,7 @@ export HF_HUB_OFFLINE=1
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 export MASTER_PORT=29500
 
-STEPS=50
+STEPS=200
 PASS=0
 FAIL=0
 
