@@ -26,6 +26,20 @@ echo "=== Downloading model weights to data/checkpoints/ ==="
 python scripts/download_internvl.py
 
 echo ""
+echo "=== Warming transformers dynamic module cache ==="
+echo "This ensures trust_remote_code=True works offline on compute nodes..."
+python -c "
+from transformers import AutoModel, AutoTokenizer
+path = 'data/checkpoints/InternVL2-2B'
+AutoModel.from_pretrained(path, trust_remote_code=True)
+AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast=False)
+print('Dynamic modules cached successfully.')
+"
+if [ $? -ne 0 ]; then
+    echo "WARNING: Dynamic module caching failed. Compute nodes may not be able to load the model."
+fi
+
+echo ""
 echo "=== Cached files ==="
 du -sh data/checkpoints/*/ 2>/dev/null
 echo ""
