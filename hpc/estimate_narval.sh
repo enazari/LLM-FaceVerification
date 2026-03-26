@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=estimate_narval
 #SBATCH --time=01:00:00
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=a100:4
 #SBATCH --cpus-per-task=6
