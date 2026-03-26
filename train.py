@@ -62,7 +62,6 @@ def train_epoch(backbone, loader, optimizer, accelerator, max_steps=0,
 def main():
     args, cfg = parse_training_args(default_config="internvit-lora")
     accelerator = setup_accelerator(cfg)
-    accelerator.even_batches = False
     output_dir = setup_output_dir(cfg, args.config, accelerator)
     epochs = cfg["training"]["epochs"]
 
