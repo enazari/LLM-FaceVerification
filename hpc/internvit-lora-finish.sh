@@ -53,6 +53,9 @@ export DATA_DIR=$SLURM_TMPDIR/data
 source ../face-verification-env/bin/activate
 export HF_HUB_OFFLINE=1
 
+export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
+export MASTER_PORT=29500
+
 echo "Starting training (resume): $CONFIG_NAME"
 srun python train.py --config "$CONFIG_NAME"
 
