@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=internvit-lora-finish
-#SBATCH --time=04:00:00
+#SBATCH --time=04:10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:h100:4

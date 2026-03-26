@@ -20,6 +20,7 @@ class PairSampler(Sampler):
 
     def __init__(self, labels: np.ndarray, P: int):
         self.P = P
+        self.batch_size = P * 2  # Accelerate's BatchSamplerShard needs this
         self.id_to_indices: dict[int, list[int]] = defaultdict(list)
         for idx, label in enumerate(labels):
             self.id_to_indices[int(label)].append(idx)
