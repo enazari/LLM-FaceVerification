@@ -1,0 +1,30 @@
+name: face-verification
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      # torch from the official whl index avoids MKL symbol conflicts with conda
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - torch>=2.1.0
+      - torchvision>=0.16.0
+      - lmdb
+      - pyyaml
+      - pillow
+      - numpy
+      - scikit-learn
+      - accelerate
+      - tqdm
+      - scikit-image
+      - opencv-python
+      - transformers>=4.37.2,<4.50.0
+      - sentencepiece
+      - timm
+      - einops
+      # flash-attn: install separately after env creation (needs torch at build time)
+      #   pip install flash-attn
+

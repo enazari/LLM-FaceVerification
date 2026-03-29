@@ -1,0 +1,36 @@
+session: internvl_lora
+
+data:
+  ms1m_dir: data/MS1M-ArcFace
+  num_identities: 85742
+  val_fraction: 0.2
+
+backbone:
+  name: internvl
+  embedding_dim: 2048
+  dropout: 0.0
+  pool: visual_mean
+  lora:
+    rank: 8
+    alpha: 8
+    component: both
+    vit_targets: ["fc1", "fc2"]
+    llm_targets: ["w1", "w2", "w3"]
+    train_projector: false
+
+loss:
+  name: infonce
+  temperature: 0.07
+
+training:
+  epochs: 10
+  batch_size: 32
+  lr: 0.0002
+  optimizer: adamw
+  weight_decay: 0.01
+  warmup_epochs: 2
+  gradient_accumulation_steps: 8
+  num_workers: 4
+  mixed_precision: bf16
+  eval_every: 2
+  eval_batch_size: 8
